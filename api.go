@@ -23,6 +23,8 @@ func startAPIServer() {
 	r.HandleFunc("/v1/swift-codes/{swiftcode}", GetSwiftCodeHandler(client)).Methods("GET")
 	//r.HandleFunc("/v1/swift-codes", GetAllSwiftCodesHandler(client)).Methods("GET")
 	r.HandleFunc("/v1/swift-codes/country/{countryISO2code}", GetSwiftCodesByCountryHandler(client)).Methods("GET")
+	r.HandleFunc("/v1/swift-codes", AddSwiftCodeHandler(client)).Methods("POST")
+	r.HandleFunc("/v1/swift-codes/{swift-code}", DeleteSwiftCodeHandler(client)).Methods("DELETE")
 
 	fmt.Println("🚀 Serwer API działa na porcie 8080")
 	log.Fatal(http.ListenAndServe(":8080", r))
@@ -223,6 +225,100 @@ func GetSwiftCodesByCountryHandler(client *mongo.Client) http.HandlerFunc {
 		}
 
 		// Zwrócenie odpowiedzi
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+	}
+}
+
+func AddSwiftCodeHandler(client *mongo.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.Background()
+
+		// Parsowanie request body
+		var newCode struct {
+			Address       string `json:"address"`
+			BankName      string `json:"bankname"`
+			CountryISO2   string `json:"countryiso2"`
+			CountryName   string `json:"countryname"`
+			IsHeadquarter bool   `json:"isheadquarter"`
+			SwiftCode     string `json:"swiftcode"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&newCode); err != nil {
+			http.Error(w, "Nieprawidłowe dane wejściowe", http.StatusBadRequest)
+			return
+		}
+
+		// W zależności od typu, wybierz kolekcję
+		var collection *mongo.Collection
+		if newCode.IsHeadquarter {
+			collection = client.Database("swift_data").Collection("headquarters")
+		} else {
+			collection = client.Database("swift_data").Collection("branches")
+		}
+
+		// Wstaw dokument do kolekcji
+		_, err := collection.InsertOne(ctx, bson.M{
+			"address":       newCode.Address,
+			"bankname":      newCode.BankName,
+			"countryiso2":   newCode.CountryISO2,
+			"countryname":   newCode.CountryName,
+			"isheadquarter": newCode.IsHeadquarter,
+			"swiftcode":     newCode.SwiftCode,
+		})
+		if err != nil {
+			http.Error(w, "Błąd podczas zapisu do bazy danych", http.StatusInternalServerError)
+			return
+		}
+
+		// Sukces
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "SWIFT code successfully added.",
+		})
+	}
+}
+
+func DeleteSwiftCodeHandler(client *mongo.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Get swiftCode from the URL parameters
+		vars := mux.Vars(r)
+		swiftCode := vars["swift-code"]
+
+		// Create a context for the MongoDB operation
+		ctx := context.Background()
+
+		// Access the collections
+		hqColl := client.Database("swift_data").Collection("headquarters")
+		brColl := client.Database("swift_data").Collection("branches")
+
+		// Delete the swiftCode from the headquarters collection
+		deleteResult, err := hqColl.DeleteOne(ctx, bson.M{"swiftcode": swiftCode})
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Błąd podczas usuwania w headquarters: %s", err), http.StatusInternalServerError)
+			return
+		}
+
+		// If not found in headquarters, try deleting from branches
+		if deleteResult.DeletedCount == 0 {
+			deleteResult, err = brColl.DeleteOne(ctx, bson.M{"swiftcode": swiftCode})
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Błąd podczas usuwania w branches: %s", err), http.StatusInternalServerError)
+				return
+			}
+		}
+
+		// Check if any document was deleted
+		if deleteResult.DeletedCount == 0 {
+			http.Error(w, "SWIFT code not found", http.StatusNotFound)
+			return
+		}
+
+		// Return success message
+		response := map[string]string{
+			"message": "SWIFT code successfully deleted.",
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(response)
 	}
