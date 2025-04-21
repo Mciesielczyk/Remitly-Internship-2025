@@ -13,11 +13,42 @@ Aplikacja umożliwia:
 ### 1. Klonowanie repozytorium
 
 ```bash
-git clone https://github.com/twoj-login/swift-code-api.git
-cd swift-code-api
+git clone https://github.com/Mciesielczyk/Remitly-Internship-2025.git
 
-go mod tidy
+go mod tidy - sprawdzi czy masz wszsystkie zaleznosci pobrane
+
+go run awesomeProject - uruchomi program
 ```
+
+Używałen MongoDB Compass, w aplikacji dodac connection na url mongodb://localhost:27017
+Najpierw należy uruchomić program i załadować excela do bazy MongoDB. (Powinna się utworzyć baza swift_data,
+a wniej brach oraz headqurters.)
+Następnie w innym terminalu uruchomić serwer API.
+Na koncu można wysyłać zapytania do bazy (np. przez Postmana)
+
+### Containerize the application
+Niestety nie udało mi się zmusić do współpracy dockera, ale setup aplikacji powinien być możliwy na wszystkic srodowiskach.
+
+Przykładowe zapytania: 
+### 1. 
+http://localhost:8080/v1/swift-codes/country/PL
+
+![image](https://github.com/user-attachments/assets/4e761da5-8a48-45aa-81c5-fb6812c927e0)
+
+### 2.
+http://localhost:8080/v1/swift-codes
+
+![image](https://github.com/user-attachments/assets/a1677473-d126-48ab-8505-cfe67db339c6)
+
+### 3.
+http://localhost:8080/v1/swift-codes/POLUPLXXX
+
+![image](https://github.com/user-attachments/assets/b680cab5-2395-4464-b67d-00232c9a11e3)
+
+### 4.
+http://localhost:8080/v1/swift-codes/BREXPLPWXXX
+
+![image](https://github.com/user-attachments/assets/45385842-6dcc-4c28-9a9b-5d19a90f1821)
 
 # Opis pliku `main.go` 
 
