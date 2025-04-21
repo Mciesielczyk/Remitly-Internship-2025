@@ -8,7 +8,7 @@ import (
 	"log"
 )
 
-func loadDataToMongo() {
+func LoadDataToMongo() {
 	// Wczytaj dane z Excela i rozdziel na centrale i oddziały
 	hqList, branchList, err := ReadAndOrganizeExcel("Interns_2025_SWIFT_CODES.xlsx")
 	if err != nil {
@@ -44,7 +44,7 @@ func loadDataToMongo() {
 		fmt.Println("Oddział dodany:", result.InsertedID)
 	}
 
-	fmt.Println("✅ Dane zostały załadowane do bazy danych MongoDB.")
+	fmt.Println(" Dane zostały załadowane do bazy danych MongoDB.")
 }
 
 func ConnectDB() (*mongo.Client, error) {

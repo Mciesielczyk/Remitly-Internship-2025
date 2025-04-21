@@ -48,7 +48,7 @@ func ReadAndOrganizeExcel(filePath string) ([]models.Headquarter, []models.Branc
 	// 1. Wypełniamy headquarters
 	for _, code := range allSwiftCodes {
 		if code.IsHeadquarter {
-			// Sprawdzamy, czy już mamy taką centralkę
+			// Sprawdzamy, czy już mamy taką centrale
 			if _, exists := headquarterMap[code.BankName]; !exists {
 				headquarterMap[code.BankName] = &models.Headquarter{
 					SwiftCode:     code.SwiftCode,
@@ -58,7 +58,7 @@ func ReadAndOrganizeExcel(filePath string) ([]models.Headquarter, []models.Branc
 					CountryName:   code.CountryName,
 					TimeZone:      code.TimeZone,
 					IsHeadquarter: true,
-					Branches:      []models.Branch{}, // Pusty początkowy slice
+					Branches:      []models.Branch{},
 				}
 			}
 		}

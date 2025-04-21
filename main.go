@@ -23,7 +23,7 @@ func main() {
 
 	switch input {
 	case "1":
-		loadDataToMongo()
+		LoadDataToMongo()
 	case "2":
 		handleServerOptions()
 	default:
@@ -34,7 +34,7 @@ func main() {
 func handleServerOptions() {
 	reader := bufio.NewReader(os.Stdin)
 
-	fmt.Println("\n📡 Serwer API i SWIFT operacje:")
+	fmt.Println("\n Serwer API i SWIFT operacje:")
 	fmt.Println("1 - Uruchom serwer API")
 	fmt.Println("2 - Dodaj dane SWIFT (POST)")
 	fmt.Println("3 - Usuń dane SWIFT (DELETE)")
@@ -91,43 +91,40 @@ func sendSwiftCode() {
 
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		fmt.Println("❌ Błąd podczas konwersji danych:", err)
+		fmt.Println(" Błąd podczas konwersji danych:", err)
 		return
 	}
 
 	resp, err := http.Post("http://localhost:8080/v1/swift-codes", "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
-		fmt.Println("❌ Błąd podczas wysyłania żądania:", err)
+		fmt.Println(" Błąd podczas wysyłania żądania:", err)
 		return
 	}
 	defer resp.Body.Close()
 
-	fmt.Println("✅ Odpowiedź serwera:", resp.Status)
+	fmt.Println(" Odpowiedź serwera:", resp.Status)
 }
 
 func deleteSwiftCode() {
 	reader := bufio.NewReader(os.Stdin)
 
-	// Ask for the SWIFT code to delete
-	fmt.Print("🗑️ Podaj SWIFT Code do usunięcia: ")
+	fmt.Print("🗑 Podaj SWIFT Code do usunięcia: ")
 	swiftCode, _ := reader.ReadString('\n')
 	swiftCode = strings.TrimSpace(swiftCode)
 
-	// Send the DELETE request
 	req, err := http.NewRequest("DELETE", fmt.Sprintf("http://localhost:8080/v1/swift-codes/%s", swiftCode), nil)
 	if err != nil {
-		fmt.Println("❌ Błąd podczas tworzenia żądania:", err)
+		fmt.Println(" Błąd podczas tworzenia żądania:", err)
 		return
 	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("❌ Błąd podczas wysyłania żądania:", err)
+		fmt.Println(" Błąd podczas wysyłania żądania:", err)
 		return
 	}
 	defer resp.Body.Close()
 
-	// Print server's response
-	fmt.Println("✅ Odpowiedź serwera:", resp.Status)
+	fmt.Println(" Odpowiedź serwera:", resp.Status)
 }

@@ -91,8 +91,7 @@ func GetAllSwiftCodesHandler(client *mongo.Client) http.HandlerFunc {
 		hqColl := client.Database("swift_data").Collection("headquarters")
 		brColl := client.Database("swift_data").Collection("branches")
 
-		// Pobierz wszystkie dane z kolekcji headquarters
-		cursor, err := hqColl.Find(ctx, bson.M{}) // Pusty obiekt {}, czyli wszystkie dane
+		cursor, err := hqColl.Find(ctx, bson.M{})
 		if err != nil {
 			http.Error(w, "Failed to fetch data from headquarters collection", http.StatusInternalServerError)
 			return
@@ -104,8 +103,7 @@ func GetAllSwiftCodesHandler(client *mongo.Client) http.HandlerFunc {
 			return
 		}
 
-		// Pobierz wszystkie dane z kolekcji branches
-		cursor, err = brColl.Find(ctx, bson.M{}) // Pusty obiekt {}, czyli wszystkie dane
+		cursor, err = brColl.Find(ctx, bson.M{})
 		if err != nil {
 			http.Error(w, "Failed to fetch data from branches collection", http.StatusInternalServerError)
 			return
@@ -123,7 +121,6 @@ func GetAllSwiftCodesHandler(client *mongo.Client) http.HandlerFunc {
 			"branches":     branches,
 		}
 
-		// Zwróć dane w formacie JSON
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(result)
 	}
@@ -134,14 +131,11 @@ func GetSwiftCodesByCountryHandler(client *mongo.Client) http.HandlerFunc {
 		vars := mux.Vars(r)
 		countryiso2 := vars["countryISO2code"]
 
-		// Tworzymy kontekst
 		ctx := context.Background()
 
-		// Kolekcje
 		hqColl := client.Database("swift_data").Collection("headquarters")
 		brColl := client.Database("swift_data").Collection("branches")
 
-		// Przeszukujemy kolekcje headquarters
 		var headquarters []models.Headquarter
 		cursor, err := hqColl.Find(ctx, bson.M{"countryiso2": countryiso2}) // Używamy 'countryiso2' (małymi literami)
 		if err != nil {
@@ -149,7 +143,6 @@ func GetSwiftCodesByCountryHandler(client *mongo.Client) http.HandlerFunc {
 			return
 		}
 
-		// Przeszukujemy kolekcje branches
 		var branches []models.Branch
 		cursorBranches, err := brColl.Find(ctx, bson.M{"countryiso2": countryiso2}) // Używamy 'countryiso2' (małymi literami)
 		if err != nil {
@@ -157,7 +150,6 @@ func GetSwiftCodesByCountryHandler(client *mongo.Client) http.HandlerFunc {
 			return
 		}
 
-		// Mapowanie na struktury
 		if err := cursor.All(ctx, &headquarters); err != nil {
 			http.Error(w, fmt.Sprintf("Błąd przy przetwarzaniu headquarters: %s", err), http.StatusInternalServerError)
 			return
@@ -168,10 +160,8 @@ func GetSwiftCodesByCountryHandler(client *mongo.Client) http.HandlerFunc {
 			return
 		}
 
-		// Zbieramy wszystkie wyniki (headquarters + branches)
-		var swiftCodes []interface{} // Zmieniamy typ na interface{}, bo dane są różne
+		var swiftCodes []interface{}
 
-		// Dodajemy headquarters
 		for _, hq := range headquarters {
 			swiftCodes = append(swiftCodes, struct {
 				Address       string `json:"address"`
@@ -188,7 +178,6 @@ func GetSwiftCodesByCountryHandler(client *mongo.Client) http.HandlerFunc {
 			})
 		}
 
-		// Dodajemy branches
 		for _, br := range branches {
 			swiftCodes = append(swiftCodes, struct {
 				Address       string `json:"address"`
@@ -205,26 +194,24 @@ func GetSwiftCodesByCountryHandler(client *mongo.Client) http.HandlerFunc {
 			})
 		}
 
-		// Uzyskujemy nazwę kraju z pierwszego oddziału (jeśli istnieje)
 		var countryName string
 		if len(branches) > 0 {
 			countryName = branches[0].CountryName
 		} else {
-			countryName = "Nieznany kraj" // Jeśli nie znaleziono żadnego oddziału
+			countryName = "Nieznany kraj"
 		}
 
-		// Struktura odpowiedzi
+		//
 		response := struct {
 			CountryISO2 string        `json:"countryISO2"`
 			CountryName string        `json:"countryName"`
-			SwiftCodes  []interface{} `json:"swiftCodes"` // Używamy interface{}, aby obsłużyć różne struktury
+			SwiftCodes  []interface{} `json:"swiftCodes"`
 		}{
 			CountryISO2: countryiso2,
-			CountryName: countryName, // Zmieniamy na nazwę kraju z pierwszego oddziału
+			CountryName: countryName,
 			SwiftCodes:  swiftCodes,
 		}
 
-		// Zwrócenie odpowiedzi
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(response)
 	}
@@ -249,7 +236,6 @@ func AddSwiftCodeHandler(client *mongo.Client) http.HandlerFunc {
 			return
 		}
 
-		// W zależności od typu, wybierz kolekcję
 		var collection *mongo.Collection
 		if newCode.IsHeadquarter {
 			collection = client.Database("swift_data").Collection("headquarters")
@@ -257,7 +243,6 @@ func AddSwiftCodeHandler(client *mongo.Client) http.HandlerFunc {
 			collection = client.Database("swift_data").Collection("branches")
 		}
 
-		// Wstaw dokument do kolekcji
 		_, err := collection.InsertOne(ctx, bson.M{
 			"address":       newCode.Address,
 			"bankname":      newCode.BankName,
@@ -281,25 +266,20 @@ func AddSwiftCodeHandler(client *mongo.Client) http.HandlerFunc {
 
 func DeleteSwiftCodeHandler(client *mongo.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Get swiftCode from the URL parameters
 		vars := mux.Vars(r)
 		swiftCode := vars["swift-code"]
 
-		// Create a context for the MongoDB operation
 		ctx := context.Background()
 
-		// Access the collections
 		hqColl := client.Database("swift_data").Collection("headquarters")
 		brColl := client.Database("swift_data").Collection("branches")
 
-		// Delete the swiftCode from the headquarters collection
 		deleteResult, err := hqColl.DeleteOne(ctx, bson.M{"swiftcode": swiftCode})
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Błąd podczas usuwania w headquarters: %s", err), http.StatusInternalServerError)
 			return
 		}
 
-		// If not found in headquarters, try deleting from branches
 		if deleteResult.DeletedCount == 0 {
 			deleteResult, err = brColl.DeleteOne(ctx, bson.M{"swiftcode": swiftCode})
 			if err != nil {
@@ -308,13 +288,11 @@ func DeleteSwiftCodeHandler(client *mongo.Client) http.HandlerFunc {
 			}
 		}
 
-		// Check if any document was deleted
 		if deleteResult.DeletedCount == 0 {
 			http.Error(w, "SWIFT code not found", http.StatusNotFound)
 			return
 		}
 
-		// Return success message
 		response := map[string]string{
 			"message": "SWIFT code successfully deleted.",
 		}
